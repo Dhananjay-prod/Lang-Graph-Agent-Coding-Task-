@@ -1,6 +1,7 @@
 agent:
   name: "Langie"
   type: "customer_support"
+  model: "gemini-1.5-flash"
   personality: |
     You are Langie — a structured and logical Lang Graph Agent.
     - You think in stages: each node represents a clear phase of the workflow.
@@ -22,8 +23,8 @@ input_schema:
       description: "Customer's full name"
     email:
       type: "string"
-      format: "email"
-      description: "Customer's email address"
+      format: "email" 
+      description: "Customer's email address (optional, will be requested if missing)"
     query:
       type: "string"
       description: "Customer's support query"
@@ -36,168 +37,240 @@ input_schema:
       pattern: "^T[0-9]+$"
       description: "Unique ticket identifier"
 
-# MCP Server Configuration
+# MCP Server Simulation
 mcp_servers:
   COMMON:
-    description: "Internal AI processing - no external data dependencies"
-    endpoint: "http://localhost:8001"
+    description: "Simulated AI processing server - Gemini integration"
+    type: "simulation"
     capabilities:
-      - text_processing
-      - ai_reasoning
-      - calculations
+      - parse_request_text
+      - normalize_fields
+      - add_flags_calculations
+      - solution_evaluation
       - response_generation
   
   ATLAS:
-    description: "External system integrations - database and API calls"
-    endpoint: "http://localhost:8002"
+    description: "Simulated external systems server - database and API simulation"
+    type: "simulation"
     capabilities:
-      - database_queries
-      - external_apis
-      - crm_integration
-      - notification_services
+      - extract_entities
+      - enrich_records
+      - clarify_question
+      - extract_answer
+      - knowledge_base_search
+      - escalation_decision
+      - update_ticket
+      - close_ticket
+      - execute_api_calls
+      - trigger_notifications
 
-# Stage Definitions
+# Workflow Stage Definitions
 stages:
   - stage_number: 1
     name: "INTAKE"
-    emoji: "📥"
     mode: "deterministic"
     description: "Accept and validate initial payload"
+    ai_integration: false
     abilities:
-      - name: "accept_payload"
-        server: "STATE"
-    example_prompt: "Validate and store the initial customer request"
+      - accept_payload
+    implementation: "Basic validation and state initialization"
     
   - stage_number: 2
     name: "UNDERSTAND"
-    emoji: "🧠"
     mode: "deterministic"
     description: "Parse request and extract entities"
+    ai_integration: true
+    ai_calls: 1
     abilities:
-      - name: "parse_request_text"
-        server: "COMMON"
-      - name: "extract_entities"
-        server: "ATLAS"
-    example_prompt: "Parse the customer query to understand intent and extract key entities"
+      - parse_request_text (COMMON - Gemini AI)
+      - extract_entities (ATLAS - Regex)
+    implementation: "AI-powered query analysis with entity extraction"
     
   - stage_number: 3
     name: "PREPARE"
-    emoji: "🛠"
     mode: "deterministic"
     description: "Normalize and enrich data"
+    ai_integration: false
     abilities:
-      - name: "normalize_fields"
-        server: "COMMON"
-      - name: "enrich_records"
-        server: "ATLAS"
-      - name: "add_flags_calculations"
-        server: "COMMON"
-    example_prompt: "Normalize extracted data and enrich with customer history"
+      - normalize_fields (COMMON)
+      - enrich_records (ATLAS)
+      - add_flags_calculations (COMMON)
+    implementation: "Data processing and customer record enrichment"
     
   - stage_number: 4
     name: "ASK"
-    emoji: "❓"
-    mode: "deterministic"
+    mode: "human_interaction"
     description: "Request clarification if needed"
+    ai_integration: false
     abilities:
-      - name: "clarify_question"
-        server: "ATLAS"
-    example_prompt: "If critical information is missing, ask the customer for clarification"
+      - clarify_question (ATLAS)
+    implementation: "Simulated clarification request (no real human interaction)"
+    note: "Currently simulates human interaction for demo purposes"
     
   - stage_number: 5
     name: "WAIT"
-    emoji: "⏳"
     mode: "deterministic"
-    description: "Wait for and process customer response"
+    description: "Process customer response"
+    ai_integration: false
     abilities:
-      - name: "extract_answer"
-        server: "ATLAS"
-      - name: "store_answer"
-        server: "STATE"
-    example_prompt: "Wait for customer response and extract the answer"
+      - extract_answer (ATLAS)
+    implementation: "Simulated customer response processing"
     
   - stage_number: 6
     name: "RETRIEVE"
-    emoji: "📚"
     mode: "deterministic"
-    description: "Search knowledge base and retrieve relevant data"
+    description: "Search knowledge base and retrieve data"
+    ai_integration: false
     abilities:
-      - name: "knowledge_base_search"
-        server: "ATLAS"
-      - name: "store_data"
-        server: "STATE"
-    example_prompt: "Search knowledge base for relevant information about the query"
+      - knowledge_base_search (ATLAS)
+    implementation: "Simulated KB search with static results"
     
   - stage_number: 7
     name: "DECIDE"
-    emoji: "⚖️"
     mode: "non-deterministic"
-    description: "Evaluate solutions and decide on action"
+    description: "Generate and evaluate solutions"
+    ai_integration: true
+    ai_calls: 1
     abilities:
-      - name: "solution_evaluation"
-        server: "COMMON"
-      - name: "escalation_decision"
-        server: "ATLAS"
-      - name: "update_payload"
-        server: "STATE"
-    example_prompt: "Evaluate possible solutions, score them, and decide if escalation is needed"
+      - solution_evaluation (COMMON - Gemini AI)
+      - escalation_decision (ATLAS)
+    implementation: "AI solution generation and evaluation in single call"
+    note: "Combines solution generation and evaluation for efficiency"
     
   - stage_number: 8
     name: "UPDATE"
-    emoji: "🔄"
     mode: "deterministic"
-    description: "Update ticket status and metadata"
+    description: "Update ticket status"
+    ai_integration: false
     abilities:
-      - name: "update_ticket"
-        server: "ATLAS"
-      - name: "close_ticket"
-        server: "ATLAS"
-    example_prompt: "Update the ticket status based on the decision made"
+      - update_ticket (ATLAS)
+      - close_ticket (ATLAS)
+    implementation: "Simulated ticket management system"
     
   - stage_number: 9
     name: "CREATE"
-    emoji: "✍️"
     mode: "deterministic"
     description: "Generate customer response"
+    ai_integration: true
+    ai_calls: 1
     abilities:
-      - name: "response_generation"
-        server: "COMMON"
-    example_prompt: "Generate a professional and helpful response for the customer"
+      - response_generation (COMMON - Gemini AI)
+    implementation: "AI-powered customer response generation"
     
   - stage_number: 10
     name: "DO"
-    emoji: "🏃"
     mode: "deterministic"
-    description: "Execute actions and send notifications"
+    description: "Execute actions and notifications"
+    ai_integration: false
     abilities:
-      - name: "execute_api_calls"
-        server: "ATLAS"
-      - name: "trigger_notifications"
-        server: "ATLAS"
-    example_prompt: "Execute all necessary API calls and send notifications"
+      - execute_api_calls (ATLAS)
+      - trigger_notifications (ATLAS)
+    implementation: "Simulated external system integrations"
     
   - stage_number: 11
     name: "COMPLETE"
-    emoji: "✅"
     mode: "deterministic"
-    description: "Finalize and output results"
+    description: "Output final payload"
+    ai_integration: false
     abilities:
-      - name: "output_payload"
-        server: "STATE"
-    example_prompt: "Compile and output the final structured payload"
+      - output_payload
+    implementation: "Final state compilation and logging"
+
+# AI Integration Summary
+ai_integration:
+  total_ai_calls: 3
+  gemini_model: "gemini-1.5-flash"
+  ai_stages:
+    - stage: 2
+      purpose: "Query analysis and intent classification"
+      fallback: "Static classification logic"
+    - stage: 7
+      purpose: "Solution generation and evaluation"
+      fallback: "Intent-based solution templates"
+    - stage: 9
+      purpose: "Customer response generation"
+      fallback: "Generic professional response"
+  
+  error_handling:
+    - JSON parsing with cleanup
+    - Multiple fallback strategies
+    - Field validation and defaults
+    - Graceful degradation
+
+# State Variables
+state_schema:
+  # Input fields
+  customer_name: "str"
+  email: "str"
+  query: "str" 
+  priority: "str"
+  ticket_id: "str"
+  
+  # Stage 2 outputs
+  parsed_intent: "Optional[str]"
+  entities: "Optional[Dict]"
+  sentiment: "Optional[str]"
+  urgency: "Optional[str]"
+  complexity: "Optional[str]"
+  customer_emotion: "Optional[str]"
+  
+  # Stage 3 outputs
+  normalized_fields: "Optional[Dict]"
+  enriched_data: "Optional[Dict]"
+  flags_calculations: "Optional[Dict]"
+  
+  # Stage 4-5 outputs
+  clarification_needed: "Optional[bool]"
+  clarification_question: "Optional[str]"
+  customer_response: "Optional[str]"
+  
+  # Stage 6 outputs
+  knowledge_base_results: "Optional[List[Dict]]"
+  relevant_data: "Optional[Dict]"
+  
+  # Stage 7 outputs
+  solutions: "Optional[List[Dict]]"
+  chosen_solution: "Optional[Dict]"
+  escalation_required: "Optional[bool]"
+  
+  # Stage 8-9 outputs
+  ticket_status: "Optional[str]"
+  generated_response: "Optional[str]"
+  
+  # Stage 10 outputs
+  executed_actions: "Optional[List[str]]"
+  notifications_sent: "Optional[List[str]]"
+  
+  # Stage 11 outputs
+  final_status: "Optional[str]"
+  processing_time: "Optional[str]"
+  
+  # Metadata
+  stage_history: "List[str]"
+  current_stage: "str"
+  timestamp: "str"
 
 # Workflow Rules
 workflow_rules:
   - rule: "Sequential Execution"
-    description: "Deterministic stages execute abilities in defined order"
-  - rule: "State Persistence"
-    description: "All state variables persist across stages"
-  - rule: "Escalation Threshold"
-    description: "Solutions scoring <90 trigger human escalation"
-  - rule: "Clarification Loop"
-    description: "ASK-WAIT stages can loop until required info obtained"
+    description: "All stages execute in 1-11 order"
+    implementation: "Linear StateGraph edges"
+    
+  - rule: "State Persistence"  
+    description: "WorkflowState persists across all stages"
+    implementation: "LangGraph StateGraph with TypedDict"
+    
+  - rule: "AI Efficiency"
+    description: "Minimize AI calls while maximizing value"
+    implementation: "3 strategic Gemini calls with robust fallbacks"
+    
+  - rule: "Error Resilience"
+    description: "Workflow continues even if AI calls fail"
+    implementation: "Try-catch blocks with fallback logic"
+    
   - rule: "Audit Trail"
-    description: "Every stage logs actions to stage_history"
+    description: "Complete execution logging"
+    implementation: "stage_history tracking and detailed logs"
 
 # Output Schema
 output_schema:
@@ -207,13 +280,24 @@ output_schema:
       type: "string"
     status:
       type: "string"
-      enum: ["resolved", "escalated", "pending", "closed"]
+      enum: ["resolved", "escalated", "in_progress", "pending"]
     customer:
       type: "object"
       properties:
         name:
           type: "string"
         email:
+          type: "string"
+    analysis:
+      type: "object"
+      properties:
+        intent:
+          type: "string"
+        sentiment:
+          type: "string"
+        urgency:
+          type: "string"
+        complexity:
           type: "string"
     solution:
       type: "object"
@@ -224,6 +308,8 @@ output_schema:
           type: "string"
         confidence_score:
           type: "integer"
+          minimum: 0
+          maximum: 100
     response_sent:
       type: "boolean"
     escalated:
@@ -242,3 +328,31 @@ output_schema:
       type: "array"
       items:
         type: "string"
+
+# Environment Requirements
+environment:
+  required_variables:
+    - GEMINI_API_KEY
+  optional_variables:
+    - LOG_LEVEL
+  
+  dependencies:
+    - "langgraph>=0.2.0"
+    - "google-generativeai>=0.7.0" 
+    - "python-dotenv>=1.0.0"
+
+# Demo Configuration
+demo:
+  sample_input:
+    customer_name: "John Smith"
+    email: ""
+    query: "When will my order come? My order id is #456 and my last name is Smith"
+    priority: "medium"
+    ticket_id: "T001"
+  
+  expected_workflow:
+    - clarification_needed: true
+    - intent_classification: "order_status"
+    - solution_generation: "AI-powered"
+    - escalation: false
+    - response_type: "AI-generated"
