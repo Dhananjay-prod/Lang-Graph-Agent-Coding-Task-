@@ -1,305 +1,336 @@
-# LangGraph Customer Support Agent - Setup Guide
+# LangGraph Customer Support Agent
 
-## 📋 Requirements
+AI-powered customer support automation using LangGraph with 11-stage workflow. Features Gemini AI integration, state persistence, MCP client simulation, and intelligent solution evaluation for enterprise support systems.
 
-### Python Dependencies (`requirements.txt`)
-```txt
-langgraph>=0.0.26
-google-generativeai>=0.3.0
-python-dotenv>=1.0.0
-pydantic>=2.0.0
-asyncio
-typing-extensions>=4.8.0
-dataclasses
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [Workflow Stages](#workflow-stages)
+- [MCP Client System](#mcp-client-system)
+- [State Management](#state-management)
+- [API Integration](#api-integration)
+- [Error Handling](#error-handling)
+- [Demo](#demo)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+- [License](#license)
+
+## Overview
+
+This project implements "Langie" - a structured LangGraph Agent that processes customer support requests through an 11-stage workflow. The system combines deterministic sequential processing with non-deterministic AI-powered decision points, demonstrating enterprise-grade workflow orchestration patterns.
+
+### Key Capabilities
+
+- End-to-end customer query processing
+- Intelligent intent classification and sentiment analysis
+- Dynamic solution generation and evaluation
+- Automated escalation decision-making
+- Professional response generation
+- Comprehensive audit trails
+
+## Architecture
+
+The system follows a pipeline architecture with clear separation of concerns:
+
+```
+Input → [11 Sequential Stages] → Output
+         ↓
+    State Persistence
+         ↓
+    MCP Client System (COMMON/ATLAS)
+         ↓
+    AI Integration Points
 ```
 
-### Environment Variables (`.env`)
+### Core Components
+
+- **StateGraph**: LangGraph v2 workflow engine
+- **WorkflowState**: TypedDict for state management
+- **MCPClient**: Simulated service layer
+- **AI Integration**: Strategic Gemini API calls
+
+## Features
+
+- **Graph-Based Workflow**: 11 sequential stages with deterministic and non-deterministic execution modes
+- **AI-Powered Decision Making**: Gemini AI integration for query analysis, solution generation, and response creation
+- **State Persistence**: Comprehensive state management across all workflow stages
+- **MCP Architecture**: Dual-server simulation (COMMON for AI, ATLAS for external systems)
+- **Error Resilience**: Robust fallback mechanisms for AI and service failures
+- **Audit Trail**: Complete logging and execution history
+
+## Installation
+
+### Prerequisites
+
+- Python 3.8+
+- Google AI API key (Gemini)
+
+### Setup
+
+1. Clone the repository:
 ```bash
-# Gemini AI API Key (required)
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Optional: MCP Server URLs (if using real MCP servers)
-MCP_COMMON_URL=http://localhost:8001
-MCP_ATLAS_URL=http://localhost:8002
+git clone https://github.com/yourusername/langgraph-customer-support-agent.git
+cd langgraph-customer-support-agent
 ```
 
-## 🚀 Quick Start
-
-### 1. Clone the Repository
-```bash
-git clone <your-repo-url>
-cd langgraph-customer-support
-```
-
-### 2. Set Up Virtual Environment
-```bash
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-### 3. Install Dependencies
+2. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure Gemini API
-1. Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Create `.env` file:
+3. Set up environment variables:
 ```bash
-echo "GEMINI_API_KEY=your_actual_api_key" > .env
+cp .env.example .env
+# Edit .env with your Gemini API key
 ```
 
-### 5. Run the Demo
+### Dependencies
+
+```
+langgraph>=0.2.0
+google-generativeai>=0.7.0
+python-dotenv>=1.0.0
+asyncio
+logging
+```
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file with:
+
 ```bash
-python langgraph_agent.py
+# Required
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Optional
+LOG_LEVEL=INFO
 ```
 
-## 📁 Project Structure
-```
-langgraph-customer-support/
-│
-├── langgraph_agent.py        # Main agent implementation
-├── agent_config.yaml         # Workflow configuration
-├── requirements.txt          # Python dependencies
-├── .env                      # Environment variables (create this)
-├── README.md                 # Project documentation
-│
-├── tests/                    # Test cases
-│   ├── test_stages.py
-│   └── test_integration.py
-│
-├── logs/                     # Execution logs
-│   └── agent_logs.txt
-│
-└── examples/                 # Example queries
-    ├── order_status.json
-    ├── refund_request.json
-    └── technical_support.json
-```
+### Getting Gemini API Key
 
-## 🧪 Testing the Agent
+1. Visit [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Create a new API key
+3. Add it to your `.env` file
 
-### Basic Test
+## Usage
+
+### Basic Usage
+
 ```python
-# test_basic.py
 import asyncio
-from langgraph_agent import run_customer_support_agent
+from app import run_customer_support_agent
 
-async def test_order_status():
-    input_data = {
-        "customer_name": "Jane Doe",
-        "email": "jane@example.com",
-        "query": "Where is my order #123?",
-        "priority": "high",
-        "ticket_id": "T002"
-    }
-    result = await run_customer_support_agent(input_data)
-    print(f"Result: {result}")
+# Define customer query
+input_payload = {
+    "customer_name": "John Smith",
+    "email": "john@example.com",
+    "query": "Where is my order #123?",
+    "priority": "medium",
+    "ticket_id": "T001"
+}
 
-asyncio.run(test_order_status())
+# Run the agent
+result = await run_customer_support_agent(input_payload)
+print(result)
 ```
 
-### Complex Test (Refund with Escalation)
-```python
-# test_refund.py
-async def test_refund_escalation():
-    input_data = {
-        "customer_name": "John Smith",
-        "email": "",  # Missing email triggers clarification
-        "query": "My order #456 arrived damaged. I want a full refund immediately!",
-        "priority": "urgent",
-        "ticket_id": "T003"
-    }
-    result = await run_customer_support_agent(input_data)
-    assert result['escalation_required'] == True
-    print("Escalation test passed!")
+### Running the Demo
+
+```bash
+python app.py
 ```
 
-## 🔄 Workflow Stages Explained
+This will execute a sample customer support scenario with complete logging.
 
-### Deterministic Stages (Sequential)
-- **INTAKE**: Accepts initial payload
-- **UNDERSTAND**: Parses query using AI
-- **PREPARE**: Normalizes and enriches data
-- **WAIT**: Processes customer responses
-- **RETRIEVE**: Searches knowledge base
-- **UPDATE**: Updates ticket status
-- **CREATE**: Generates response
-- **DO**: Executes API calls
-- **COMPLETE**: Outputs final result
+## Workflow Stages
 
-### Non-Deterministic Stage
-- **DECIDE**: AI evaluates multiple solutions and scores them
+| Stage | Name | Mode | Description | AI Integration |
+|-------|------|------|-------------|----------------|
+| 1 | INTAKE | Deterministic | Accept and validate payload | No |
+| 2 | UNDERSTAND | Deterministic | Parse query and extract entities | Yes (Gemini) |
+| 3 | PREPARE | Deterministic | Normalize and enrich data | No |
+| 4 | ASK | Human Interaction | Request clarification if needed | No |
+| 5 | WAIT | Deterministic | Process customer response | No |
+| 6 | RETRIEVE | Deterministic | Search knowledge base | No |
+| 7 | DECIDE | Non-deterministic | Generate and evaluate solutions | Yes (Gemini) |
+| 8 | UPDATE | Deterministic | Update ticket status | No |
+| 9 | CREATE | Deterministic | Generate customer response | Yes (Gemini) |
+| 10 | DO | Deterministic | Execute actions and notifications | No |
+| 11 | COMPLETE | Deterministic | Output final payload | No |
 
-### Human Interaction Stage
-- **ASK**: Requests clarification from customer
+## MCP Client System
 
-## 🔧 Customization
+The system uses two simulated MCP servers:
 
-### Adding New Abilities
-```python
-# In MCPClient class
-async def _execute_custom_ability(self, ability_name: str, params: Dict) -> Dict:
-    if ability_name == "your_custom_ability":
-        # Your logic here
-        return {"result": "processed"}
-```
+### COMMON Server (AI Processing)
+- Text parsing and analysis
+- Solution generation and evaluation
+- Response generation
+- Priority calculations
 
-### Modifying Stage Logic
-```python
-async def custom_stage(state: WorkflowState) -> WorkflowState:
-    # Your stage logic
-    state['custom_field'] = "value"
-    return state
+### ATLAS Server (External Integrations)
+- Entity extraction
+- Database operations
+- API integrations
+- Notification services
 
-# Add to workflow
-workflow.add_node("custom", custom_stage)
-workflow.add_edge("previous_stage", "custom")
-```
+## State Management
 
-### Changing AI Model
-```python
-# Switch to different Gemini model
-gemini_model = genai.GenerativeModel('gemini-pro-vision')
+The `WorkflowState` TypedDict manages 25+ variables including:
 
-# Or use a different AI provider
-# Replace gemini calls with your preferred AI API
-```
+### Input Data
+- customer_name, email, query, priority, ticket_id
 
-## 📊 Monitoring & Logging
+### Analysis Results
+- parsed_intent, sentiment, entities, urgency
 
-### Enable Detailed Logging
-```python
-import logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/agent_debug.log'),
-        logging.StreamHandler()
-    ]
-)
-```
+### Processing Data
+- knowledge_base_results, solutions, chosen_solution
 
-### Performance Metrics
-```python
-# Add to stage_11_complete
-metrics = {
-    "total_stages": len(state['stage_history']),
-    "processing_time": state['processing_time'],
-    "ai_calls": state.get('ai_call_count', 0),
-    "external_api_calls": len(state.get('executed_actions', []))
+### Output Data
+- generated_response, executed_actions, final_status
+
+### Metadata
+- stage_history, processing_time, timestamp
+
+## API Integration
+
+### Gemini AI Integration
+
+The system makes strategic AI calls at three key points:
+
+1. **Stage 2 - Query Analysis**: Intent classification, sentiment analysis, entity extraction
+2. **Stage 7 - Solution Generation**: Dynamic solution creation and evaluation
+3. **Stage 9 - Response Creation**: Professional customer response generation
+
+### Error Handling
+
+Each AI integration includes robust fallback mechanisms:
+- JSON parsing with multiple strategies
+- Default values for failed operations
+- Warning logs for debugging
+- Graceful degradation
+
+## Error Handling
+
+### AI Call Failures
+- Try-catch blocks around all Gemini API calls
+- Fallback logic for each capability
+- Detailed error logging
+
+### State Validation
+- Required field checks
+- Type validation
+- Default value assignment
+
+### Workflow Resilience
+- Individual stage error isolation
+- Continuation with partial data
+- Comprehensive audit trails
+
+## Demo
+
+The included demo processes a sample customer query:
+
+```json
+{
+  "customer_name": "John Smith",
+  "email": "",
+  "query": "When will my order come? My order id is #456 and my last name is Smith",
+  "priority": "medium",
+  "ticket_id": "T001"
 }
 ```
 
-## 🐛 Troubleshooting
+Expected output includes:
+- Complete workflow execution logs
+- AI analysis results
+- Generated solutions and evaluations
+- Professional customer response
+- Final structured payload
 
-### Common Issues
+## Project Structure
 
-1. **Gemini API Error**
-   - Check API key is valid
-   - Ensure you have API quota remaining
-   - Try with smaller queries
-
-2. **Async Errors**
-   ```python
-   # Windows users might need:
-   asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-   ```
-
-3. **State Persistence Issues**
-   - Ensure all state fields are properly initialized
-   - Check for None values before accessing nested fields
-
-## 📈 Performance Optimization
-
-### Caching KB Results
-```python
-from functools import lru_cache
-
-@lru_cache(maxsize=100)
-async def cached_kb_search(query: str):
-    return await atlas_client.call_ability("knowledge_base_search", {"query": query})
+```
+├── app.py                 # Main application file
+├── .env                   # Environment variables
+├── .env.example          # Environment template
+├── requirements.txt      # Python dependencies
+├── README.md            # This file
+└── logs/                # Log files (created at runtime)
 ```
 
-### Parallel Processing
-```python
-# Execute independent stages in parallel
-results = await asyncio.gather(
-    common_client.call_ability("parse_request_text", params1),
-    atlas_client.call_ability("extract_entities", params2)
-)
+## Development
+
+### Running Tests
+
+```bash
+# Run the demo
+python app.py
+
+# Enable debug logging
+LOG_LEVEL=DEBUG python app.py
 ```
 
-## 🚢 Deployment
+### Key Design Patterns
 
-### Docker Setup
-```dockerfile
-FROM python:3.9-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-CMD ["python", "langgraph_agent.py"]
-```
+- **Pipeline Pattern**: Sequential stage processing
+- **Strategy Pattern**: MCP server implementations
+- **State Machine**: Workflow state evolution
+- **Dependency Injection**: Service layer abstraction
 
-### Environment Configuration
-```yaml
-# docker-compose.yml
-version: '3.8'
-services:
-  agent:
-    build: .
-    environment:
-      - GEMINI_API_KEY=${GEMINI_API_KEY}
-    ports:
-      - "8000:8000"
-```
+### Extending the System
 
-## 📝 Submission Checklist
+To add new stages:
+1. Define stage function following the pattern
+2. Add to workflow builder
+3. Update state schema if needed
+4. Add appropriate edges
 
-Before submitting:
-- [ ] Code runs without errors
-- [ ] All 11 stages execute correctly
-- [ ] State persists across stages
-- [ ] Gemini AI integration works
-- [ ] Logs show clear execution flow
-- [ ] Configuration file included
-- [ ] README with setup instructions
-- [ ] Example test cases provided
-- [ ] Demo video recorded
+To add new AI capabilities:
+1. Implement in `_execute_common_ability`
+2. Add fallback logic
+3. Update stage functions to use new capability
 
-## 🎥 Demo Video Script
+## Contributing
 
-1. **Introduction** (30 seconds)
-   - Your name
-   - Brief overview of the solution
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-2. **Architecture** (1 minute)
-   - Show the 11-stage workflow
-   - Explain deterministic vs non-deterministic stages
-   - Show MCP client integration
+## License
 
-3. **Live Demo** (2-3 minutes)
-   - Run basic order status query
-   - Show state persistence across stages
-   - Demonstrate escalation scenario
-   - Display final output
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-4. **Code Walkthrough** (2 minutes)
-   - Show key implementation details
-   - Explain Gemini AI integration
-   - Highlight state management
+## Acknowledgments
 
-5. **Conclusion** (30 seconds)
-   - Summary of features
-   - Future improvements possible
+- Built with LangGraph for workflow orchestration
+- Powered by Google Gemini AI
+- Designed for enterprise customer support automation
 
-## 📧 Contact & Support
+## Support
 
-For questions about this implementation:
-- Review the Claude conversation in `Customer service claude convo.txt`
-- Check the original task document
-- Test with different query types
+For questions or issues:
+1. Check the error logs in the console output
+2. Verify your Gemini API key is correctly set
+3. Ensure all dependencies are installed
+4. Review the workflow stage logs for debugging
 
-Good luck with your submission! 🎉
+## Future Enhancements
+
+Potential improvements for production deployment:
+- Real MCP server integration
+- Database persistence layer
+- Web API interface
+- Multi-tenant support
+- Advanced analytics and reporting
+- Integration with existing CRM systems
